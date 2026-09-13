@@ -1,0 +1,942 @@
+# What shotgun looks for. Edit freely — every field is read at runtime.
+
+# ---------------------------------------------------------------- target roles
+# A job must match at least one `include` pattern (case-insensitive regex over
+# the job title) and no `exclude` pattern. Keep these tight: the rule filter is
+# what stops you paying Claude to score 4,000 irrelevant postings.
+titles:
+  include:
+    # Staff-level individual contributor
+    - '\bstaff\b.*\b(security|appsec|product security|infrastructure security)\b'
+    - '\b(security|appsec)\b.*\bstaff\b'
+    - '\bprincipal\b.*\bsecurity\b'
+    - '\bsenior staff\b.*\bsecurity\b'
+    # Lead security engineer
+    - '\blead\b.*\bsecurity engineer\b'
+    - '\bsecurity engineer\b.*\blead\b'
+    - '\b(security|appsec|cloud security|product security)\b.*\b(tech lead|technical lead)\b'
+    # Management
+    - '\b(engineering manager|manager|head of|director)\b.*\b(security|appsec|product security)\b'
+    - '\bsecurity\b.*\b(engineering manager|manager|head of|director)\b'
+    # Senior and unlevelled security engineering.
+    #
+    # These were originally left out to keep the filter tight, but measured
+    # against a 5,851-posting corpus the title rules were rejecting 99.1% and
+    # the mobility gate only 0.5% — so this, not the visa filter, was the
+    # reason only three roles ever reached the queue. Adding them surfaced 35
+    # in-region roles including "Senior Cloud Security Engineer, Berlin" and
+    # "Senior Cloud Security Engineer - AI Resilience, Remote Europe".
+    #
+    # A "Senior X Security Engineer" at a large company is frequently the same
+    # scope as Staff elsewhere, and the scorer judges actual seniority from the
+    # responsibilities anyway — that is what `level` is for.
+    - '\b(senior|sr\.?)\b.*\b(security|appsec|infosec|product security|cloud security|application security|network security|infrastructure security|platform security)\b.*\bengineer\b'
+    - '\b(security|appsec|infosec|product security|cloud security|application security|network security|infrastructure security|platform security)\b.*\bengineer\b'
+    - '\bengineer\b.*\b(security|appsec|infosec|product security|cloud security|application security|network security|infrastructure security|platform security)\b'
+    - '\b(security|appsec|product security|cloud security|application security)\b.*\b(architect|lead)\b'
+  exclude:
+    - '\b(intern|internship|graduate|new grad|apprentice|trainee)\b'
+    - '\b(junior|jr\.?|associate|entry level)\b'
+    - '\b(sales|account executive|account director|account manager|solutions engineer|pre-?sales|customer success)\b'
+    - '\b(recruiter|talent|sourcer)\b'
+    - '\b(soc analyst|tier 1|tier one|help ?desk|support engineer)\b'
+    - '\b(physical security|guard|officer on site)\b'
+    - '\bclearance required\b'
+    # Non-engineering roles that otherwise slip past the level patterns —
+    # "Principal Product Manager, Security" is not a staff IC role.
+    - '\bproduct manager\b|\bproduct management\b|\bproduct owner\b'
+    - '\b(technical program manager|program manager|tpm)\b'
+    - '\b(partner manager|channel|alliances|business development)\b'
+    - '\b(field engineer|sales engineer|solutions architect|technical account)\b'
+    - '\b(product marketing|marketing manager|gtm)\b'
+    - '\b(cleared|clearance)\b'
+    - '\b(recruiting|people|hr) manager\b'
+    # The noise the wider include patterns above let in. "Consulting Architect"
+    # and "Solutions Architect" are pre-sales; "Specialist" in this corpus was
+    # physical-security and channel roles; "Intermediate" is below level.
+    - '\bconsulting architect\b'
+    - '\bintermediate\b'
+    - '\bsecurity (intelligence )?specialist\b'
+    - '\b(research scientist|data scientist)\b'
+    # Legal roles reached by the any-level `privacy` pattern below —
+    # "Legal Counsel - Regulatory Compliance, Product and Privacy" is not a
+    # security engineering job. Narrow on purpose: "Security & Compliance
+    # Lead" is one, so `compliance` is not excluded.
+    - '\b(legal counsel|counsel|paralegal|attorney)\b'
+
+  # ------------------------------------------------- any level, any shape
+  # A short list of companies where every security opening is worth seeing,
+  # whatever the level and whatever the title looks like.
+  #
+  # Worth being precise about what this fixes, because it is not the level
+  # gate. Measured against the roles these boards are actually advertising,
+  # 31 of 43 already passed `include` — "Senior Web Security Engineer,
+  # Browser Platform" among them. What `include` throws away is titles that
+  # are security work but do not say "security <something> engineer":
+  #
+  #     Senior Privacy Engineer                     no include pattern
+  #     Principal Security Researcher - EDR         no include pattern
+  #     Detection Engineer                          no include pattern
+  #     Senior Security Analyst (Governance)        no include pattern
+  #     Staff Software Engineer - Detection Platform  no include pattern
+  #
+  # Across a 6,000-posting sweep requiring that shape is the right trade —
+  # it is what keeps the scoring bill down. For a dozen companies you would
+  # take a job at tomorrow it is the wrong trade, so for these the domain
+  # alone is enough.
+  #
+  # `exclude` above still applies and is never relaxed. An internship is
+  # still an internship, and "Product Manager - Security" is still a product
+  # manager however much you want to work there.
+  any_level:
+    companies:
+      # Genuinely location-neutral — these hire worldwide or close to it.
+      - canonical         # "Home based - Worldwide" on every posting
+      - duck-duck-go      # the Ashby board token
+      - duckduckgo        # ...and the display spelling
+      - mozilla
+      # Remote-first with hiring into your regions.
+      - chainguard
+      - huntress
+      - elevenlabs
+      - goteleport
+      - teleport
+      - hackerone
+      - proton
+      - temporal
+      - incident          # the Ashby token for incident.io
+      - sonarsource
+      - grafana
+      - gitlab
+      - clickhouse
+      - posthog
+      - supabase
+      # Security-product companies. Security *is* the engineering here, so a
+      # "Detection Engineer" or "Security Researcher" is core work rather
+      # than an internal function — exactly the titles the shape rule drops.
+      - zscaler
+      - catonetworks
+      - netskope
+      - endorlabs
+      - apiiro
+      - obsidiansecurity
+      - nudgesecurity
+      - cyberhaven
+      - sentra
+      - doppel
+      - twingate
+      - netbird
+      - cloudsek
+      - immersivelabs
+      - cribl
+      - druva
+      # Labs and companies already advertising security work in your regions.
+      - anthropic
+      - cohere
+      - writer
+      - snowflake
+      - notion
+      - staffbase
+      - truveta
+      - solarisbank
+      - doctolib
+      - teya
+      - alan
+      - miro
+      # AI labs. These title security work in a house style the shape rule
+      # cannot see: "Member of Technical Staff (Software Engineer, Security)",
+      # "Member of Technical Staff - Security", "MTS, Security". Every one of
+      # those matched no include pattern.
+      - xai
+      - perplexity
+      - cognition
+      - thinkingmachines
+      - reflectionai
+      - primeintellect
+      - nousresearch
+      - fireworks
+      - etched
+      - mercor
+      - replit
+      # AI-native and heavily-funded companies already hiring security in a
+      # target region.
+      - nebius            # 30 security roles, 6 across Amsterdam/Prague/Finland
+      - intercom          # 4, all of them London or Dublin
+      - wayve             # Staff Security Engineer, London
+      - waymo             # 3 in London
+      - vercel
+      - algolia           # Information Security Engineer, remote UK
+      - granola           # Security Engineer, London
+      - coreweave
+      # Companies whose in-region security roles the shape rule was dropping.
+      # Each of these was found by `sweep`, which widens the titles, and then
+      # rejected by `rank`, which did not — the two disagreeing is the bug.
+      - openai            # Software Engineer, Privacy — Dublin and London;
+                          # Applied AI Engineer, Cyber — Dublin
+      - lovable           # Staff/Principal SWE, Detection and Response, Stockholm
+      - expel             # Managed SIEM Detection Engineer, remote
+      - cloudflare        # Senior Security Compliance Specialist
+      - tide              # Engineer, Threat Detection — UK
+      - celonis           # Manager of Global Cyber Defense, Madrid
+      - gocardless        # Threat and Analytics Lead, Lisbon
+      - databricks        # Principal Engineer - Privacy, Amsterdam
+      - mindtickle        # Information Security & Privacy, Pune
+      - veracode          # Senior Application Security Consultant, London
+      - fastly            # Threat Detection Analyst, Australia-remote
+      - elastic
+    include:
+      - '\b(security|appsec|infosec|cyber)\b'
+      - '\b(privacy|cryptograph)\b'
+      - '\b(detection|threat|vulnerabilit|bug bounty|red team|incident response)\b'
+
+# The level buckets shotgun reports on. Used for tagging, not filtering.
+levels:
+  - staff
+  - lead
+  - manager
+
+# ------------------------------------------------------------------- locations
+# `regions` expand to country lists in shotgun/geo.py. A job passes if its
+# country is in the expanded set, OR it is remote within one of these regions.
+locations:
+  regions:
+    - india
+    - europe        # EU/EEA + Switzerland
+    - uk
+    - australia
+    - new_zealand
+  # Extra individual countries beyond the regions above.
+  countries: []
+  # Accept fully-remote roles whose stated hiring region overlaps the above.
+  accept_remote: true
+  # Reject anything that requires relocation to a country outside the set,
+  # even if the posting is otherwise a match.
+  reject_other_countries: true
+  # Countries outside `regions` that are still worth applying to *if* the
+  # posting sponsors a visa, pays relocation, or is a contract you could work
+  # from where you are. US roles are the main case.
+  allow_if_mobility_friendly:
+    - US
+    - CA
+    - SG
+    - AE
+
+# ------------------------------------------------------------ prioritisation
+# "Apply to visa/relocation roles first" is implemented as a score bonus, so
+# `shotgun prepare` spends its per-run budget on the roles that can actually
+# result in a move. Tune the weights or zero them out.
+priority:
+  visa_sponsorship_bonus: 15
+  relocation_bonus: 10
+  contract_bonus: 8
+  # Out-of-region roles with no mobility signal are penalised rather than
+  # dropped — the location parse is not always right.
+  no_mobility_penalty: 25
+  explicit_no_sponsorship_penalty: 50
+
+  # Companies worth reaching first, by group. These only reorder the queue —
+  # nothing is filtered on company, so a name missing here still gets applied
+  # to on its score alone.
+  #
+  # Matching is a word-boundary match against the posting's company name, so
+  # `amazon` catches "Amazon Web Services (AWS)" and `meta` does not catch
+  # "Metabase". A company in two groups earns the higher bonus, not the sum.
+  #
+  # Caveat worth knowing: a recruiting agency with a brand name that happens
+  # to contain one of these words picks the bonus up too. It is a soft nudge
+  # to the ordering, so that is tolerable rather than something to defend
+  # against.
+  company_groups:
+    faang:
+      bonus: 12
+      companies:
+        - meta
+        - facebook
+        - amazon
+        - aws
+        - apple
+        - netflix
+        - google
+        - alphabet
+        - youtube
+        - deepmind
+    # MANGO is used for a few different sets depending on who is saying it —
+    # Meta or Microsoft for the M, and Nvidia or Netflix for the N. The union
+    # is listed rather than picking one reading, because this only affects
+    # ordering and being generous costs nothing.
+    mango:
+      bonus: 12
+      companies:
+        - meta
+        - microsoft
+        - apple
+        - nvidia
+        - google
+        - openai
+        - anthropic
+
+  # Countries hiring hard enough right now to be worth reaching before the
+  # rest of the in-region queue. Keyed by ISO code, matched against the
+  # country parsed out of the posting's location — a role whose location is
+  # only "Remote - Europe" names no country and so earns nothing here.
+  country_bonus:
+    GB: 8      # UK
+    PL: 8      # Poland
+
+# --------------------------------------------------------------- compensation
+# Applied only when the posting states a salary. Postings with no salary
+# published are never rejected on comp — most aren't.
+compensation:
+  # Placeholders — set your own. A posting is only rejected when it actually
+  # publishes a number, and most do not.
+  minimum:
+    INR: 0
+    EUR: 0
+    GBP: 0
+    AUD: 0
+    NZD: 0
+    USD: 0
+
+# ------------------------------------------------------------------- scoring
+scoring:
+  # Jobs below this score (0-100) are never queued. Claude scores JD-vs-profile
+  # relevance after the cheap rule filter has already run.
+  minimum_score: 50
+  # Hard skip list — if the JD mentions these, drop it regardless of score.
+  # Matched as case-insensitive regexes, which is what lets an entry exclude
+  # its own false positives. An invalid pattern is matched literally.
+  dealbreakers:
+    - 'active security clearance'
+    # Not a bare 'polygraph'. Every US-incorporated employer pastes an
+    # "Employee Polygraph Protection Act (EPPA)" poster link into the footer
+    # of every posting — a law *forbidding* employers from demanding one —
+    # and matching it rejected eight in-region Elastic security roles in
+    # Spain, Portugal, Greece, Ireland, Poland and the UK.
+    - '\bpolygraph\b(?!\s+protection)'
+    - 'must be a us citizen'
+    - 'onsite 5 days'
+
+# --------------------------------------------------------------------- sources
+sources:
+  # Boards scraped via JobSpy.
+  jobspy:
+    enabled: true
+    # Glassdoor is deliberately absent: it answers every non-US location with
+    # "location not parsed" plus a connection reset, so it failed 100% of
+    # queries here and only added latency. Each board is now scraped in its own
+    # call, so re-adding it would cost time but no longer lose the other
+    # boards' results for that query.
+    boards: [linkedin, indeed, google]
+    results_per_search: 50
+    hours_old: 168        # one week
+    # What to search for. This is the widest lever in the file — LinkedIn,
+    # Indeed and Google index employers that run no public ATS at all, so
+    # these queries are the only way this tool sees them.
+    #
+    # The defaults in jobspy_source.py were all level-prefixed — "staff
+    # security engineer", "principal security engineer" — which quietly
+    # decided that a role has to lead with its level to be found. It misses
+    # "Senior Cloud Security Engineer", the exact title that scored 88 at
+    # n26, and every AI-security title. Search by domain and let the title
+    # rules and the scorer judge the level.
+    #
+    # Cost is terms x locations x boards, so this is 17 x 21 x 3 = 1,071
+    # scrapes. That is hours, not minutes — LinkedIn rate-limits hard. Trim
+    # either list to cut it; dropping the level-led terms alone halves it,
+    # since the domain terms already match those titles.
+    search_terms:
+      # Domain, unlevelled — the broadest useful queries
+      - security engineer
+      - cloud security engineer
+      - product security engineer
+      - application security engineer
+      - platform security engineer
+      - infrastructure security engineer
+      - devsecops engineer
+      - security architect
+      # The specialism that is hardest to find and least contested
+      - ai security engineer
+      - llm security
+      - mcp security
+      # Level-led, for roles that advertise that way
+      - staff security engineer
+      - principal security engineer
+      - lead security engineer
+      - security engineering manager
+      - head of security
+      - director of security
+    # Locations per region. Poland and Ireland were missing entirely, which
+    # is awkward given Poland carries a priority bonus.
+    region_queries:
+      india:
+        - India
+        - Bengaluru, India
+        - Remote, India
+      europe:
+        - Germany
+        - Berlin, Germany
+        - Netherlands
+        - Poland
+        - Warsaw, Poland
+        - Ireland
+        - Dublin, Ireland
+        - Spain
+        - France
+        - Sweden
+        - Switzerland
+        - Remote, Europe
+        - Remote, EMEA
+      uk:
+        - London, United Kingdom
+        - Remote, United Kingdom
+      australia:
+        - Sydney, Australia
+        - Remote, Australia
+      new_zealand:
+        - Auckland, New Zealand
+  # Public ATS job-board APIs. Add company tokens as you find them — these are
+  # far higher signal than board scraping and have no anti-bot problem.
+  # Token is the slug in the careers URL, e.g.
+  #   boards.greenhouse.io/acme        -> greenhouse: acme
+  #   jobs.lever.co/acme               -> lever: acme
+  #   jobs.ashbyhq.com/acme            -> ashby: acme
+  #
+  # The tokens below were all verified live. Prune the ones you don't care
+  # about and add your own — this list is the highest-leverage thing in the
+  # file, since these companies are the ones you'll actually hear back from.
+  ats_boards:
+    enabled: true
+    greenhouse:
+      # Strong India / Europe / UK / ANZ security hiring
+      - gitlab          # Bangalore + Remote India/EMEA staff security roles
+      - okta            # Bengaluru + Barcelona staff security
+      - datadog         # Paris, London, EU-remote
+      - elastic         # EU-wide remote
+      - cloudflare
+      - databricks
+      - stripe
+      - figma
+      # UK / EU fintech
+      - monzo
+      - wise
+      - tide            # has an India entity
+      - n26
+      - adyen
+      - sumup
+      - gocardless
+      - truelayer
+      - form3
+      - grafanalabs
+      - postman
+      - groww
+      # ---------------------------------------------- location-neutral
+      # Remote-first companies that hire across borders rather than into one
+      # office. Every token below was probed live; the security counts are
+      # what the board was advertising at the time and will drift.
+      - canonical       # 10 security roles, all "Home based - Worldwide"
+      - mozilla         # 11, remote UK / Germany / France / Canada / US
+      - chainguard      # 8, US / UK / Canada remote
+      - huntress        # 9, US / UK / Ireland / Australia remote
+      - proton          # 2, Geneva / Paris / Barcelona
+      - veracode        # 1, London
+      - fastly          # 5, incl. Pune and Australia-remote
+      - bitwarden
+      - tailscale       # US / Canada remote only — kept for when that widens
+      - expel
+      # Live boards with no security opening right now. They cost one HTTP
+      # call each and are here so the next one shows up on its own.
+      - pagerduty
+      - cockroachlabs
+      - honeycomb
+      - planetscale
+      - netlify
+      - circleci
+      - mattermost
+      - orcasecurity
+      - remote          # remote.com
+      # ----------------------------------- startups and remote-friendly
+      # Probed live: 331 candidate tokens x 3 boards = 993 calls, of which
+      # 144 answered and 72 had a security role open. Counts in the comments
+      # are what the board was advertising at the time and will drift; a
+      # token with no comment answered but had nothing in security, and is
+      # here so the next opening surfaces without another probe.
+      - affirm
+      - airtable
+      - alloy
+      - anthropic             # 46/599 security, e.g. London, UK; Ontario, CAN; Remote-Frien
+      - apiiro
+      - asana                 # 6/109 security, e.g. Warsaw
+      - braze
+      - brex
+      - catonetworks          # 16/104 security, e.g. London, England, United Kingdom; Unite
+      - celonis               # 1/281 security, e.g. Madrid, Spain
+      - cleo
+      - cloudsek              # 4/14 security, e.g. Bengaluru, Karnataka, India
+      - cognite               # 1/49 security, e.g. India (Bengaluru)
+      - contentstack          # 1/4 security, e.g. Bangalore
+      - coursera              # 2/24 security, e.g. United Kingdom
+      - cresta
+      - cribl
+      - customerio
+      - dataiku
+      - doctolib              # 2/124 security, e.g. Paris, Paris, France
+      - druva                 # 2/38 security, e.g. Pune, Maharashtra, India
+      - duolingo
+      - endorlabs             # 3/29 security, e.g. Bengaluru, India
+      - galileo
+      - jetbrains
+      - klaviyo               # 6/133 security, e.g. Dublin, IE
+      - komodohealth
+      - labelbox
+      - lithic
+      - make
+      - masterclass
+      - mentimeter
+      - mercury
+      - mirakl
+      - netskope              # 5/140 security, e.g. Bengaluru, Karnataka, India
+      - newrelic
+      - observeai             # 1/17 security, e.g. Bengaluru
+      - obsidiansecurity
+      - parloa                # 1/50 security, e.g. Berlin Office
+      - peak
+      - raisin
+      - scaleai               # 14/219 security, e.g. London, UK
+      - solarisbank           # 3/27 security, e.g. Berlin
+      - staffbase             # 8/32 security, e.g. Germany Remote
+      - storyblok
+      - streamnative
+      - swordhealth
+      - traderepublic
+      - truecaller            # 1/33 security, e.g. Sweden
+      - truveta               # 6/43 security, e.g. Hyderabad, India
+      - udemy
+      - webflow
+      - yugabyte              # 1/14 security, e.g. India
+      - zscaler               # 26/363 security, e.g. Bangalore, IND; Gurgaon, IND; Mumbai,
+      # ------------------------------------- AI labs and funded startups
+      # Probed live: 211 candidate tokens x 3 boards = 633 calls, 82
+      # answered. The labs are here for a specific reason — they title
+      # security work "Member of Technical Staff, Security" and "MTS,
+      # Security", which the shape rule in `titles.include` cannot match,
+      # so the ones worth applying to are on `titles.any_level` too.
+      - algolia  # 1/33 security, 1 in region, e.g. Remote - United Kingdom
+      - beam
+      - comet
+      - coreweave  # 16/292 security, none in region yet
+      - descript
+      - dialpad
+      - eudia
+      - figure
+      - figureai  # 4/102 security, none in region yet
+      - graphcore  # 1/187 security, none in region yet
+      - heygen  # 1/18 security, none in region yet
+      - intercom  # 4/121 security, 4 in region, e.g. London, England
+      - lightmatter
+      - nebius  # 30/378 security, 6 in region, e.g. Finland
+      - neuralink
+      - nuro
+      - otter
+      - pingcap
+      - shield
+      - singlestore
+      - stabilityai
+      - stackblitz
+      - tenstorrent
+      - togetherai
+      - turing
+      - udio
+      - vercel  # 7/86 security, 4 in region, e.g. Hybrid - San Francisco, New 
+      - waymo  # 7/338 security, 3 in region, e.g. London, United Kingdom, UK
+      - wayve  # 4/171 security, 2 in region, e.g. London
+      - xai  # 10/254 security, 3 in region, e.g.  Palo Alto, CA; Austin, TX; 
+      # ------------------------------------- found by `shotgun probe`
+      # Derived from company names already seen on the remote boards and
+      # LinkedIn, then verified live. 400 candidates -> 53 live boards ->
+      # these 20 with a security role open.
+      - alphasense
+      - anaplan
+      - andurilindustries
+      - artefactlinkedin
+      - atariinc
+      - avepoint
+      - awin
+      - axon
+      - baringa
+      - blockchain
+      - brunswickgroup
+      - coalition
+      - coinbase
+      - commvault
+      # ------------------- `shotgun probe` full sweep, 3,198 candidates
+      # 9,594 requests -> 443 live boards -> 114 distinct after folding
+      # the case duplicates Greenhouse and Ashby both answer to.
+      - alixpartners
+      - capco
+      - diligentcorporation
+      - dkbcodefactory
+      - flip
+      - flix
+      - geotab
+      - hellofresh
+      - hightouch
+      - immoscout24
+      - intersystems
+      - ionq
+      - isaraerospace
+      - jamf
+      - keepersecurity
+      - knowbe4
+      - mewssystems
+      - mixpanel
+      - mongodb
+      - nasuni
+      - nmi
+      - pantheon
+      - payuk
+      - planetlabs
+      - purestorage
+      - relex
+      - reltio
+      - ripple
+      - riskledger
+      - scopely
+      - scout24
+      - sentinellabs
+      - sezzle
+      - sohohouseco
+      - sonymusicentertainment
+      - spektrum
+      - sti
+      - swissitsecuritygroup
+      - talonone
+      - toogoodtogo
+      - triplelift
+      - veeamsoftware
+      - woltglobal2
+      - wpp
+      - wppmedia
+      - yotpo
+      - zetaglobal
+    lever:
+      - zoox            # Lever, not Workable — 6/242 security
+      - Ubiminds        # case-sensitive; 'ubiminds' 404s
+      - offchainlabs
+      - sonarsource     # 3, incl. Geneva
+      - sonatype
+      - ledger
+      - contentsquare
+      - swile
+      - qonto
+      - younited
+      - binance
+      # ----------------------------------- startups and remote-friendly
+      # Probed live: 331 candidate tokens x 3 boards = 993 calls, of which
+      # 144 answered and 72 had a security role open. Counts in the comments
+      # are what the board was advertising at the time and will drift; a
+      # token with no comment answered but had nothing in security, and is
+      # here so the next opening surfaces without another probe.
+      - 360learning
+      - agicap
+      - aircall
+      - blablacar
+      - brilliant
+      - cred
+      - mindtickle            # 3/19 security, e.g. Pune, Maharashtra
+      - pigment               # 1/120 security, e.g. France
+      - porter
+      - ro
+      - scaleway              # 1/32 security, e.g. Paris
+      - spotify
+      - twingate
+      - veepee                # 1/68 security, e.g. Paris
+      - zilliz
+    # SmartRecruiters: https://api.smartrecruiters.com/v1/companies/{token}/postings
+    # The token is the company slug in jobs.smartrecruiters.com/{token}.
+      # ------------------------------------- found by `shotgun probe`
+      # Derived from company names already seen on the remote boards and
+      # LinkedIn, then verified live. 400 candidates -> 53 live boards ->
+      # these 20 with a security role open.
+      - apex-ai
+      # ------------------- `shotgun probe` full sweep, 3,198 candidates
+      # 9,594 requests -> 443 live boards -> 114 distinct after folding
+      # the case duplicates Greenhouse and Ashby both answer to.
+      - dnb
+      - jobgether
+      - kobie
+      - magnetforensics
+      - ppro
+      - shieldai
+      - yuno
+    smartrecruiters:
+      - Visa
+      - BoschGroup
+      - Ubisoft
+      - IKEA
+      - AveryDennison
+    # Workable: https://apply.workable.com/api/v1/widget/accounts/{token}?details=true
+    workable:
+      - typeform
+    # Personio hosts a public XML feed per tenant at
+    #   https://{token}.jobs.personio.de/xml   (or .com — both are tried)
+    # The token is the subdomain on the careers page.
+    #
+    # Every token below was verified live, but be aware of the yield: across
+    # 11 working tenants and ~135 postings there was exactly one security
+    # role, and it was an internship. Personio's customer base skews small and
+    # mid-size German-speaking companies, which is not where staff-level
+    # security roles sit. The adapter is not the limiting factor here — the
+    # token list is. Add tenants you actually care about and this earns its
+    # place; leave it as-is and it costs a few HTTP calls for very little.
+    personio:
+      - alasco
+      - prewave
+      - adverity
+      - tractive
+      - wandelbots
+      - everphone
+      - personio
+    ashby:
+      - vanta
+      - clickhouse
+      - openai
+      - supabase
+      - synthesia
+      - lovable
+      - ramp
+      - linear
+      - posthog
+      - neon
+      - railway
+      - render
+      - warp
+      - cursor
+      - sardine
+      - pennylane
+      - n8n
+      - legora
+      # ---------------------------------------------- location-neutral
+      - duck-duck-go    # 3 — incl. Senior Web Security Engineer, Browser
+                        # Platform, remote worldwide. The one you asked about.
+      - goteleport      # 3, US / UK remote
+      - elevenlabs      # 3, UK / London / Australia
+      - hackerone       # 2, London
+      - temporal        # 2 — also surfaced via LinkedIn as "Anywhere in the
+                        # World", which is why it is worth asking directly
+      - incident        # 1, London
+      - sentry
+      - semgrep
+      - zapier
+      - revenuecat      # publishes location-independent pay
+      - helpscout
+      - oyster
+      - close
+      - buffer
+      - astronomer
+      - prefect
+      - airbyte
+      - workos
+      - coder
+      # ----------------------------------- startups and remote-friendly
+      # Probed live: 331 candidate tokens x 3 boards = 993 calls, of which
+      # 144 answered and 72 had a security role open. Counts in the comments
+      # are what the board was advertising at the time and will drift; a
+      # token with no comment answered but had nothing in security, and is
+      # here so the next opening surfaces without another probe.
+      - abacum
+      - abridge
+      - airwallex             # 14/582 security, e.g. AU - Melbourne
+      - alan                  # 4/115 security, e.g. Anywhere in France, Belgium, Spain
+      - ankorstore
+      - atlan                 # 2/8 security, e.g. India
+      - authzed
+      - backmarket
+      - baseten
+      - bunny
+      - camunda
+      - causal
+      - cerebras              # 10/111 security, e.g. Bengaluru, IND
+      - clark
+      - clickup
+      - cohere                # 5/144 security, e.g. London
+      - column
+      - confluent
+      - crusoe
+      - cyberhaven            # 1/22 security, e.g. Bangalore
+      - decagon
+      - deepl                 # 1/62 security, e.g. Munich
+      - doppel
+      - faculty               # 3/69 security, e.g. UK - London
+      - forto
+      - freetrade             # 1/8 security, e.g. London
+      - goodlord
+      - harvey
+      - headway               # 2/86 security, e.g. Remote
+      - immersivelabs         # 5/15 security, e.g. United Kingdom
+      - inngest
+      - knock
+      - langchain
+      - llamaindex
+      - marshmallow
+      - miro                  # 2/39 security, e.g. Amsterdam
+      - modal
+      - moderntreasury
+      - mollie
+      - mosaic
+      - moss
+      - netbird
+      - notion                # 6/129 security, e.g. Dublin, Ireland
+      - nudgesecurity
+      - openevidence
+      - paddle
+      - pinecone
+      - plaid
+      - pleo
+      - poolside
+      - quantexa
+      - resend
+      - runpod
+      - runway
+      - sanity
+      - sentra
+      - seon
+      - sierra                # 5/209 security, e.g. London
+      - sift
+      - snowflake             # 14/363 security, e.g. PL-Warsaw-Lixa C
+      - socure
+      - suno
+      - svix
+      - teya                  # 2/115 security, e.g. London
+      - turbopuffer
+      - unit
+      - weaviate
+      - writer                # 4/50 security, e.g. London, UK
+      - zilch
+      # ------------------------------------- AI labs and funded startups
+      # Probed live: 211 candidate tokens x 3 boards = 633 calls, 82
+      # answered. The labs are here for a specific reason — they title
+      # security work "Member of Technical Staff, Security" and "MTS,
+      # Security", which the shape rule in `titles.include` cannot match,
+      # so the ones worth applying to are on `titles.any_level` too.
+      - 1x  # 2/87 security, none in region yet
+      - andela
+      - anyscale  # 3/20 security, none in region yet
+      - braintrust
+      - character
+      - cognition  # 2/94 security, none in region yet
+      - deepnote
+      - dust
+      - etched  # 3/105 security, 1 in region, e.g. Remote
+      - fireworks  # 2/71 security, none in region yet
+      - granola  # 1/16 security, 1 in region, e.g. London
+      - handshake
+      - hex  # 1/32 security, none in region yet
+      - ideogram
+      - lancedb  # 1/12 security, none in region yet
+      - langfuse
+      - letta
+      - lorikeet
+      - mem0
+      - meow
+      - mercor  # 4/101 security, none in region yet
+      - nabla
+      - neptune
+      - nous
+      - nousresearch  # 1/10 security, none in region yet
+      - opusclip
+      - perplexity  # 2/112 security, none in region yet
+      - physicalintelligence
+      - pika
+      - plain
+      - primeintellect  # 1/25 security, none in region yet
+      - pylon
+      - rain  # 2/49 security, none in region yet
+      - reflectionai  # 3/49 security, none in region yet
+      - replit  # 6/78 security, none in region yet
+      - rewind
+      - rho
+      - saronic  # 9/202 security, none in region yet
+      - sfcompute
+      - slope
+      - speak
+      - tempo
+      - thinkingmachines  # 2/38 security, none in region yet
+      - unify
+      - worldlabs
+      # ------------------------------------- found by `shotgun probe`
+      # Derived from company names already seen on the remote boards and
+      # LinkedIn, then verified live. 400 candidates -> 53 live boards ->
+      # these 20 with a security role open.
+      - abound
+      - aios
+      - arq
+      - codesphere
+      - constructor
+      # ------------------- `shotgun probe` full sweep, 3,198 candidates
+      # 9,594 requests -> 443 live boards -> 114 distinct after folding
+      # the case duplicates Greenhouse and Ashby both answer to.
+      - delinea
+      - deliveroo
+      - docker
+      - Doctolib
+      - enpal
+      - everai
+      - eye-security
+      - hims-and-hers
+      - hoxhunt
+      - kayak
+      - kiwi-com
+      - lemfi
+      - mitti
+      - motorway
+      - omaze
+      - parity
+      - preply
+      - shield-ai
+      - skylo
+      - tavily
+      - tekion
+      - thought-machine
+      - toogoodtogo
+      - tremendous
+      - upvest
+      - vinci4d
+      - wayflyer
+      - whitecircle
+      - ygo
+  # Remote-first boards. All three verified live: Remotive and RemoteOK return
+  # JSON, WeWorkRemotely returns RSS. Remotive is the most useful of them — it
+  # publishes job_type (contract vs full_time) and the regions the employer
+  # will actually hire into.
+  remote_boards:
+    enabled: true
+    # arbeitnow is the only Germany/EU-weighted one of the four — the other
+    # three are US-remote heavy, which is the gap it fills. Free, no key.
+    boards: [remotive, remoteok, weworkremotely, arbeitnow]
+  # remote.com has no public API — it is a React Server Components app, so
+  # this adapter drives a headless browser and reads the DOM. Off by default
+  # because it is the most fragile source here and costs a browser launch.
+  remotecom:
+    enabled: false
+    search_terms:
+      - security engineer
+      - staff security
+      - security manager
+
+# -------------------------------------------------------------------- apply
+apply:
+  # queue    — fill the form, stop before submit, wait for `shotgun review`
+  # auto     — submit without asking (see README: ToS risk)
+  mode: queue
+  # Never touch these even if a match shows up there.
+  # Never discover, score, queue or apply to these. Matched on word
+  # boundaries against the posting's company name, so "acme" also catches
+  # "Acme GmbH" — which is the point, because the boards do not agree on how
+  # a company spells itself.
+  #
+  # Your current employer belongs here. It cannot be left to the scorer: a
+  # good role at your own company scores well, which is exactly why it has
+  # to be excluded by rule.
+  blocked_companies: []
+  # Max applications to prepare per `shotgun run`. A safety valve.
+  max_per_run: 10

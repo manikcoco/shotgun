@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block subtitle %}{{ total }} tracked{% if active_stage %} · filtered to {{ active_stage }}{% endif %}{% endblock %}
+
+{% block content %}
+
+<div class="tiles">
+  {% for tile in tiles %}
+  <a class="tile {% if active_stage == tile.stage %}active{% endif %}"
+     href="/?stage={{ tile.stage }}">
+    <div class="value">{{ tile.value }}</div>
+    <div class="label"><span class="dot {{ tile.status }}"></span>{{ tile.label }}</div>
+  </a>
+  {% endfor %}
+</div>
+
+<div class="filters">
+  <a class="btn {% if not active_stage and not mobility_only %}primary{% endif %}" href="/">All</a>
+  <a class="btn {% if mobility_only %}primary{% endif %}" href="/?mobility=1">
+    Visa / relocation only
+  </a>
+  <select onchange="if(this.value) location.href='/?stage='+this.value; else location.href='/'">
+    <option value="">Any stage…</option>
+    {% for s in stages %}
+    <option value="{{ s }}" {% if active_stage == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+{% if not rows %}
+  <div class="empty">
+    Nothing here yet. Run <code>shotgun discover</code> then <code>shotgun rank</code>.
+  </div>
+{% else %}
+<div class="card" style="padding: 4px 6px;">
+<table>
+  <thead>
+    <tr>
+      <th>Stage</th>
+      <th>Role</th>
+      <th>Company</th>
+      <th>Location</th>
+      <th>Visa</th>
+      <th>Reloc</th>
+      <th>Type</th>
+      <th class="num">Score</th>
+      <th class="num">Priority</th>
+      <th>Updated</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>
+        <span class="badge {{ r.status }}">
+          <span class="ic">{{ r.icon }}</span>{{ r.stage.replace('_', ' ') }}
+        </span>
+      </td>
+      <td><a class="job" href="/job/{{ r.job_id }}">{{ r.title }}</a></td>
+      <td class="secondary">{{ r.company }}</td>
+      <td class="secondary">{{ r.location }}</td>
+      <td>
+        <span class="badge {{ r.visa[0] }}"><span class="ic">{{ r.visa[1] }}</span>{{ r.visa[2] }}</span>
+      </td>
+      <td>
+        <span class="badge {{ r.reloc[0] }}"><span class="ic">{{ r.reloc[1] }}</span>{{ r.reloc[2] }}</span>
+      </td>
+      <td class="secondary">{{ r.employment }}</td>
+      <td class="num">{{ r.score if r.score is not none else '—' }}</td>
+      <td class="num">{{ r.priority if r.priority is not none else '—' }}</td>
+      <td class="muted" style="font-variant-numeric: tabular-nums;">{{ r.updated_at }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+
+{% endblock %}

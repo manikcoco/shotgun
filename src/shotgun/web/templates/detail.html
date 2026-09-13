@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}{{ app.title }} — {{ app.company }}{% endblock %}
+{% block subtitle %}<a href="/" style="color: var(--text-muted);">← all applications</a>{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom: 18px;">
+  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <h2 style="font-size:20px; margin:0; letter-spacing:-0.3px;">{{ app.title }}</h2>
+    <span class="badge {{ app.status }}">
+      <span class="ic">{{ app.icon }}</span>{{ app.stage.replace('_', ' ') }}
+    </span>
+  </div>
+  <div class="secondary" style="margin-top:5px;">
+    {{ app.company }} · {{ app.location }}{% if app.remote %} · remote{% endif %}
+    · <span class="muted">{{ app.ats }}</span>
+  </div>
+</div>
+
+<div class="grid2">
+  <div>
+    <!-- Mobility first: it is the thing that decides whether this is worth
+         applying to at all. -->
+    <div class="card">
+      <h2>Mobility</h2>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+        <span class="badge {{ app.visa[0] }}">
+          <span class="ic">{{ app.visa[1] }}</span>visa sponsorship: {{ app.visa[2] }}
+        </span>
+        <span class="badge {{ app.reloc[0] }}">
+          <span class="ic">{{ app.reloc[1] }}</span>relocation: {{ app.reloc[2] }}
+        </span>
+        <span class="badge">{{ app.employment }}</span>
+        {% if app.hiring_countries %}
+        <span class="badge">hires into: {{ app.hiring_countries | join(', ') }}</span>
+        {% endif %}
+      </div>
+      <dl class="kv">
+        <dt>Priority</dt><dd>{{ app.priority if app.priority is not none else '—' }}
+          <span class="muted">(score {{ app.score if app.score is not none else '—' }}
+          adjusted for mobility)</span></dd>
+        <dt>Level</dt><dd>{{ app.level }}</dd>
+        <dt>Salary</dt><dd>{{ app.salary }}</dd>
+        <dt>Posted</dt><dd>{{ app.posted_at }}</dd>
+      </dl>
+    </div>
+
+    {% if app.reasoning or app.key_requirements or app.dealbreakers %}
+    <div class="card">
+      <h2>Why this scored {{ app.score if app.score is not none else '—' }}</h2>
+      {% if app.reasoning %}<p style="margin:0 0 11px;">{{ app.reasoning }}</p>{% endif %}
+      {% if app.dealbreakers %}
+      <p style="margin:0 0 6px;">
+        <span class="badge critical"><span class="ic">⚠</span>dealbreakers</span>
+      </p>
+      <ul class="tight" style="margin-bottom:11px;">
+        {% for d in app.dealbreakers %}<li>{{ d }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      {% if app.concerns %}
+      <p style="margin:0 0 6px;">
+        <span class="badge warning"><span class="ic">!</span>concerns</span>
+      </p>
+      <ul class="tight" style="margin-bottom:11px;">
+        {% for c in app.concerns %}<li>{{ c }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      {% if app.key_requirements %}
+      <h2 style="margin-top:12px;">Requirements the resume must hit</h2>
+      <ul class="tight">
+        {% for r in app.key_requirements %}<li>{{ r }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      {% if app.rule_reason %}
+      <p class="muted" style="font-size:12px; margin:11px 0 0;">
+        Rule filter: {{ app.rule_reason }}
+      </p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <h2>Job description</h2>
+      {% if app.description %}
+      <pre class="jd">{{ app.description }}</pre>
+      {% else %}
+      <p class="muted" style="margin:0;">
+        No description captured. Open the posting to read it.
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>Documents</h2>
+      {% if app.resume_path %}
+        <p style="margin:0 0 8px;">
+          <a class="btn" href="/file?path={{ app.resume_path | urlencode }}" target="_blank">
+            Tailored resume (PDF)
+          </a>
+        </p>
+      {% else %}
+        <p class="muted" style="margin:0 0 10px;">Not generated yet.</p>
+      {% endif %}
+
+      <form method="post" action="/job/{{ app.job_id }}/prepare" style="margin:0 0 4px;">
+        <input type="hidden" name="documents_only" value="1">
+        <button type="submit">Tailor resume only</button>
+      </form>
+      <form method="post" action="/job/{{ app.job_id }}/prepare" style="margin:0;">
+        <button type="submit">Tailor + open and fill the form</button>
+      </form>
+      <p class="muted" style="font-size:12px; margin:9px 0 0;">
+        Filling never submits. You press the submit button yourself.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Apply</h2>
+      <p style="margin:0 0 8px;">
+        <a class="btn primary" href="{{ app.apply_url }}" target="_blank" rel="noopener">
+          Open application →
+        </a>
+      </p>
+      <p class="muted" style="font-size:12px; margin:0; word-break:break-all;">
+        {{ app.apply_url }}
+      </p>
+    </div>
+
+    {% if cover_text %}
+    <div class="card">
+      <h2>Cover letter</h2>
+      <pre class="jd" style="max-height:280px;">{{ cover_text }}</pre>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <h2>Update stage</h2>
+      <form method="post" action="/job/{{ app.job_id }}/stage">
+        <select name="stage" style="width:100%; margin-bottom:8px;">
+          {% for s in stages %}
+          <option value="{{ s }}" {% if app.stage == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+        <input type="text" name="note" placeholder="Note (optional)"
+               style="width:100%; margin-bottom:8px;">
+        <button type="submit" class="btn primary" style="width:100%;">Save</button>
+      </form>
+    </div>
+
+    {% if events %}
+    <div class="card">
+      <h2>History</h2>
+      <ul class="timeline">
+        {% for e in events %}
+        <li>
+          <span class="when">{{ e.at }}</span> · {{ e.kind }}
+          {% if e.detail %}<div class="muted">{{ e.detail }}</div>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

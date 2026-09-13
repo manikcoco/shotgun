@@ -1,0 +1,50 @@
+# Secrets and config
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+token.json
+
+# Your own preferences: copy config/preferences.example.yaml to
+# config/preferences.yaml. It holds your salary floors, target regions and
+# blocked companies, none of which belong in a public repo.
+config/preferences.yaml
+
+# Personal documents — resumes, cover letters, anything with my details
+private/
+resumes/
+*.pdf
+*.docx
+
+# Local data
+*.db
+*.sqlite
+*.sqlite3
+data/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp

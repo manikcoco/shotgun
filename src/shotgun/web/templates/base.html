@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}shotgun{% endblock %}</title>
+<style>
+  /* Tokens from the reference palette. Dark values are declared under both
+     the media query (OS setting) and the [data-theme] scope (toggle), so the
+     toggle wins either way. */
+  :root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --good:           #0ca30c;
+    --warning:        #fab219;
+    --serious:        #ec835a;
+    --critical:       #d03b3b;
+    --accent:         #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page:           #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --accent:         #3987e5;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page:           #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --accent:         #3987e5;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text-primary);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 24px 20px 64px; }
+
+  header.top {
+    display: flex; align-items: baseline; gap: 14px;
+    padding-bottom: 16px; margin-bottom: 20px;
+    border-bottom: 1px solid var(--gridline);
+  }
+  header.top h1 { font-size: 17px; margin: 0; letter-spacing: -0.2px; }
+  header.top h1 a { color: inherit; text-decoration: none; }
+  header.top .sub { color: var(--text-muted); font-size: 13px; }
+  header.top .spacer { flex: 1; }
+
+  button, .btn {
+    font: inherit; cursor: pointer;
+    background: var(--surface-1); color: var(--text-primary);
+    border: 1px solid var(--baseline); border-radius: 6px;
+    padding: 6px 11px; text-decoration: none; display: inline-block;
+  }
+  button:hover, .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { opacity: 0.9; color: #fff; }
+
+  /* ---- stat tiles: headline numbers, no plot, so no hover layer ---- */
+  .tiles {
+    display: grid; gap: 10px; margin-bottom: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+  }
+  .tile {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 13px;
+    text-decoration: none; color: inherit; display: block;
+  }
+  .tile:hover { border-color: var(--accent); }
+  .tile .value {
+    font-size: 26px; line-height: 1.1; font-weight: 600;
+    letter-spacing: -0.5px;
+  }
+  .tile .label {
+    font-size: 11.5px; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .tile.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+
+  /* Status dot always sits beside a text label — colour never carries
+     meaning on its own. */
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block; flex: none;
+  }
+  .dot.good { background: var(--good); }
+  .dot.warning { background: var(--warning); }
+  .dot.serious { background: var(--serious); }
+  .dot.critical { background: var(--critical); }
+  .dot.neutral { background: var(--baseline); }
+  .dot.muted { background: var(--text-muted); }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11.5px; padding: 2px 7px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface-1);
+    color: var(--text-secondary); white-space: nowrap;
+  }
+  .badge .ic { font-size: 10px; line-height: 1; }
+  .badge.good { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
+  .badge.critical { color: var(--critical); border-color: color-mix(in srgb, var(--critical) 40%, transparent); }
+  .badge.warning { color: var(--text-primary); border-color: color-mix(in srgb, var(--warning) 55%, transparent); }
+  .badge.serious { color: var(--text-primary); border-color: color-mix(in srgb, var(--serious) 55%, transparent); }
+  .badge.muted { color: var(--text-muted); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td {
+    text-align: left; padding: 9px 10px;
+    border-bottom: 1px solid var(--gridline); vertical-align: middle;
+  }
+  th {
+    font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--text-muted); font-weight: 600;
+    border-bottom: 1px solid var(--baseline);
+  }
+  td.num { font-variant-numeric: tabular-nums; text-align: right; }
+  tbody tr:hover { background: var(--surface-1); }
+  td a.job { color: var(--text-primary); text-decoration: none; font-weight: 500; }
+  td a.job:hover { color: var(--accent); }
+  .muted { color: var(--text-muted); }
+  .secondary { color: var(--text-secondary); }
+
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 18px; margin-bottom: 16px;
+  }
+  .card h2 {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--text-muted); margin: 0 0 11px;
+  }
+  .grid2 { display: grid; grid-template-columns: 1.55fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+
+  dl.kv { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
+  dl.kv dt { color: var(--text-muted); font-size: 12.5px; }
+  dl.kv dd { margin: 0; font-size: 13px; }
+
+  pre.jd {
+    white-space: pre-wrap; word-wrap: break-word; margin: 0;
+    font: 12.5px/1.6 system-ui, -apple-system, sans-serif;
+    color: var(--text-secondary); max-height: 460px; overflow-y: auto;
+  }
+  ul.tight { margin: 0; padding-left: 18px; }
+  ul.tight li { margin-bottom: 4px; font-size: 13px; }
+
+  .filters { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+  select, input[type=text] {
+    font: inherit; padding: 6px 9px; border-radius: 6px;
+    border: 1px solid var(--baseline);
+    background: var(--surface-1); color: var(--text-primary);
+  }
+  .empty { color: var(--text-muted); padding: 36px 0; text-align: center; }
+  .timeline { list-style: none; margin: 0; padding: 0; font-size: 12.5px; }
+  .timeline li { padding: 5px 0; border-bottom: 1px solid var(--gridline); }
+  .timeline .when { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1><a href="/">shotgun</a></h1>
+    <span class="sub">{% block subtitle %}{% endblock %}</span>
+    <span class="spacer"></span>
+    <button onclick="toggleTheme()" id="themebtn">theme</button>
+  </header>
+  {% block content %}{% endblock %}
+</div>
+<script>
+  const saved = localStorage.getItem('shotgun-theme');
+  if (saved) document.documentElement.dataset.theme = saved;
+  function toggleTheme() {
+    const cur = document.documentElement.dataset.theme;
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('shotgun-theme', next);
+  }
+</script>
+</body>
+</html>

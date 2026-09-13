@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ contact.name }} — Resume</title>
+<style>
+  /* ATS-safe by construction: one column, no floats, no tables for layout,
+     no background graphics, real heading elements, system serif/sans only. */
+  @page { size: A4; margin: 0; }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 10.5pt;
+    line-height: 1.4;
+    color: #1a1a1a;
+    margin: 0;
+  }
+
+  h1 {
+    font-size: 20pt;
+    line-height: 1.1;
+    margin: 0 0 2pt;
+    letter-spacing: 0.2pt;
+  }
+
+  .headline {
+    font-size: 11pt;
+    font-style: italic;
+    color: #333;
+    margin: 0 0 6pt;
+  }
+
+  .contact {
+    font-size: 9.5pt;
+    color: #333;
+    margin: 0 0 14pt;
+  }
+  .contact span:not(:last-child)::after {
+    content: " · ";
+    color: #999;
+  }
+
+  h2 {
+    font-size: 10.5pt;
+    text-transform: uppercase;
+    letter-spacing: 1pt;
+    border-bottom: 0.75pt solid #333;
+    padding-bottom: 2pt;
+    margin: 14pt 0 7pt;
+  }
+
+  p { margin: 0 0 6pt; }
+
+  .role { margin-bottom: 11pt; page-break-inside: avoid; }
+
+  .role-head {
+    margin-bottom: 3pt;
+  }
+  .role-title {
+    font-weight: bold;
+    font-size: 11pt;
+  }
+  .role-company { font-size: 11pt; }
+  .role-meta {
+    font-size: 9.5pt;
+    color: #444;
+    font-style: italic;
+  }
+
+  ul { margin: 3pt 0 0; padding-left: 15pt; }
+  li { margin-bottom: 3pt; }
+
+  .skills { margin: 0; }
+
+  .edu-item, .cert-item { margin-bottom: 4pt; }
+  .edu-item .year { color: #444; font-size: 9.5pt; }
+</style>
+</head>
+<body>
+
+  <header>
+    <h1>{{ contact.name }}</h1>
+    {% if headline %}
+    <p class="headline">{{ headline }}</p>
+    {% endif %}
+    <p class="contact">
+      {% if contact.location %}<span>{{ contact.location }}</span>{% endif %}
+      <span>{{ contact.email }}</span>
+      {% if contact.phone %}<span>{{ contact.phone }}</span>{% endif %}
+      {% if contact.linkedin %}<span>{{ contact.linkedin }}</span>{% endif %}
+      {% if contact.github %}<span>{{ contact.github }}</span>{% endif %}
+      {% if contact.website %}<span>{{ contact.website }}</span>{% endif %}
+    </p>
+  </header>
+
+  {% if summary %}
+  <section>
+    <h2>Summary</h2>
+    <p>{{ summary }}</p>
+  </section>
+  {% endif %}
+
+  {% if skills %}
+  <section>
+    <h2>Skills</h2>
+    <p class="skills">{{ skills | join(" · ") }}</p>
+  </section>
+  {% endif %}
+
+  {% if roles %}
+  <section>
+    <h2>Experience</h2>
+    {% for role in roles %}
+    <div class="role">
+      <div class="role-head">
+        <span class="role-title">{{ role.title }}</span>,
+        <span class="role-company">{{ role.company }}</span><br>
+        <span class="role-meta">
+          {{ role.dates }}{% if role.location %} · {{ role.location }}{% endif %}
+        </span>
+      </div>
+      {% if role.bullets %}
+      <ul>
+        {% for bullet in role.bullets %}
+        <li>{{ bullet }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if certifications %}
+  <section>
+    <h2>Certifications</h2>
+    {% for cert in certifications %}
+    <div class="cert-item">{{ cert }}</div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if education %}
+  <section>
+    <h2>Education</h2>
+    {% for item in education %}
+    <div class="edu-item">
+      {{ item.qualification }}, {{ item.institution }}
+      {% if item.year %}<span class="year">— {{ item.year }}</span>{% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+</body>
+</html>
