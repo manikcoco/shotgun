@@ -29,6 +29,7 @@ shotgun reads the postings themselves and answers those before you read a word.
 
 ```bash
 uv sync
+uv run pytest                                             # 499 tests, no network, no model calls
 cp .env.example .env                                      # ANTHROPIC_API_KEY or OPENAI_API_KEY
 cp config/preferences.example.yaml config/preferences.yaml
 uv run shotgun profile init ~/your-resume.pdf
@@ -52,7 +53,7 @@ Only four cost a model call. Everything else is free.
 | `status --filter --why` | How many roles match, how many unscored, why the rest were rejected. |
 | `list --in-region` | Roles you could take without sponsorship. Also `--anywhere`, `--near-miss`. |
 | `show <id> --jd` | One posting: score, priority breakdown, reasoning, history. |
-| `queue` · `ui` | The apply queue; local web dashboard. |
+| `queue` · `ui` | The apply queue; local web dashboard (binds 127.0.0.1, no auth — don't expose it). |
 | `discover` | Fetch and store. `-s ats_boards\|remote_boards\|jobspy` |
 | `rank` | **paid** — scores what survived the free filter. `--rules-only` doesn't. |
 | `rank --refilter\|--rebucket\|--reprioritise` | Re-apply config changes to work already paid for. |
@@ -114,36 +115,34 @@ that matches on field type, `autocomplete` token and label text, so it
 degrades rather than breaks. Workday and iCIMS are refused outright —
 multi-step wizards needing per-tenant accounts.
 
-## Limitations
+## Contributing
 
-- **No filler has ever run against a live form.** Discovery, ranking,
-  tailoring and rendering are exercised end to end; the four fillers are not.
-- **LinkedIn postings have no description**, so they're scored on title alone.
-- **`Job.fingerprint` is `company|title`** and `upsert_job` never updates
-  `location` — on one fetch, 427 of 6,958 postings merged into a row holding a
-  different location, dropping alternative hiring countries.
-- **Location parsing is a lookup table**, so it has a long tail. An
-  unrecognised city means "names nowhere" — forgiving, but wrong.
-- **SQLite without WAL**, and `prepare` holds a write transaction across each
-  browser session, so `ui` and `prepare` can lock each other out.
-- The web dashboard has no pagination.
+Pull requests and forks are very welcome. This started as one person's tool
+for one person's job search, and most of what would make it genuinely useful
+to others is work I haven't done.
 
-## Notes
+The most valuable places to help:
 
-`private/` and `data/` are gitignored: your profile, generated documents and
-the SQLite database stay local. The web UI binds to 127.0.0.1 with no auth.
+- **The form fillers have never been run against a live application.**
+  Discovery, ranking, tailoring and rendering are exercised end to end; the
+  fillers are not. If you run one and it breaks, that bug report is worth more
+  than a feature.
+- **New board adapters.** Workday and iCIMS are where a lot of enterprise
+  security roles live and neither is supported. The six existing adapters in
+  `discover/ats_boards.py` are the pattern to follow — please verify the
+  response shape against a live call rather than a remembered one, as the
+  existing ones do.
+- **Location and sponsorship coverage.** `geo.py` and `visa.py` are lookup
+  tables and regexes built from one corpus, so they have a long tail. A
+  location string or a sponsorship phrasing they get wrong, with a test, is an
+  ideal first contribution.
+- **Your own `preferences.yaml` shape.** The tool assumes security roles and
+  five target regions. If you bend it to another discipline or geography and
+  something breaks, say so.
 
-Behind a TLS-intercepting proxy, two workarounds are built in and are no-ops
-otherwise: `ssl` is pointed at the system trust store, and the browser falls
-back to installed Chrome when the Playwright CDN is blocked
-(`SHOTGUN_BROWSER_CHANNEL=chrome`).
-
-```bash
-uv run pytest              # 499 tests, no network, no model calls
-```
-
-Most tests encode a specific failure found against real data. `test_visa.py`
-quotes the phrasings the corpus uses and asserts the ones that must *not*
-match; `test_geo.py` is a table of location strings real boards emit.
+Two things to know before opening a PR: tests must pass without network access
+or model calls (`uv run pytest`), and `ruff check src tests` must be clean.
+Please keep comments explaining *why* a decision was made rather than what the
+code does — that convention is most of the value in this repo.
 
 MIT.
