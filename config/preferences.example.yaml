@@ -618,6 +618,81 @@ sources:
       - wppmedia
       - yotpo
       - zetaglobal
+      # --- remote-first directories: remoteintech/remote-jobs (884 companies)
+      #     and yanirs/established-remote. Each token below was run through
+      #     this repo's own fetcher against the live board before being
+      #     added; 14 candidates that never answered were dropped rather
+      #     than shipped unverified.
+      - acquia
+      - aestudio
+      - alphasights
+      - appinio
+      - axios
+      - beyond
+      - brave
+      - cabify
+      - calendly
+      - cloudbeds
+      - consensys
+      - dashlane
+      - datacamp
+      - discord
+      - doximity
+      - dropbox
+      - ebury
+      - epicgames
+      - fingerprint
+      - fleetio
+      - generalassembly
+      - godaddy
+      - gohiring
+      - gradle
+      - gremlin
+      - hudl
+      - ifit
+      - karat
+      - kentik
+      - khanacademy
+      - launchpotato
+      - liveperson
+      - locusrobotics
+      - mercari
+      - metalab
+      - modernhealth
+      - muckrack
+      - nearform
+      - noredink
+      - nuharborsecurity
+      - octopusdeploy
+      - oddball
+      - openzeppelin
+      - paypay
+      - platformsh
+      - raft
+      - reddit
+      - rocketchat
+      - saasgroup
+      - scandit
+      - seatgeek
+      - securityscorecard
+      - stackexchange
+      - status
+      - stitchfix
+      - tenableinc
+      - thorn
+      - thrivemarket
+      - toast
+      - trussworksinc
+      - twilio
+      - udacity
+      - upwork
+      - valimail
+      - voxmedia
+      - wikimedia
+      - wizeline
+      - xpinc
+      - zenrows
+      - zupinnovation
     lever:
       - zoox            # Lever, not Workable — 6/242 security
       - Ubiminds        # case-sensitive; 'ubiminds' 404s
@@ -651,6 +726,42 @@ sources:
       - twingate
       - veepee                # 1/68 security, e.g. Paris
       - zilliz
+      # --- remote-first directories: remoteintech/remote-jobs (884 companies)
+      #     and yanirs/established-remote. Each token below was run through
+      #     this repo's own fetcher against the live board before being
+      #     added; 14 candidates that never answered were dropped rather
+      #     than shipped unverified.
+      - activecampaign
+      - aerostrat
+      - anomali
+      - appen
+      - appen-2
+      - articulate
+      - bluecatnetworks
+      - bounteous
+      - britecore
+      - charitywater
+      - collabora
+      - envato-2
+      - extremenetworks
+      - findem
+      - gojob
+      - graylog
+      - heetch
+      - kraken
+      - logrocket
+      - marcopolo
+      - mindful
+      - myollie
+      - olo
+      - perforce
+      - prominentedge
+      - renofi
+      - spreedly
+      - superside
+      - sysdig
+      - teamsnap
+      - veeva
     # SmartRecruiters: https://api.smartrecruiters.com/v1/companies/{token}/postings
     # The token is the company slug in jobs.smartrecruiters.com/{token}.
       # ------------------------------------- found by `shotgun probe`
@@ -674,6 +785,12 @@ sources:
       - Ubisoft
       - IKEA
       - AveryDennison
+      # --- remote-first directories: remoteintech/remote-jobs (884 companies)
+      #     and yanirs/established-remote. Each token below was run through
+      #     this repo's own fetcher against the live board before being
+      #     added; 14 candidates that never answered were dropped rather
+      #     than shipped unverified.
+      - applaudostudios
     # Workable: https://apply.workable.com/api/v1/widget/accounts/{token}?details=true
     workable:
       - typeform
@@ -685,6 +802,17 @@ sources:
       - humanmade
       - io-global
       - ushahidi
+      # --- remote-first directories: remoteintech/remote-jobs (884 companies)
+      #     and yanirs/established-remote. Each token below was run through
+      #     this repo's own fetcher against the live board before being
+      #     added; 14 candidates that never answered were dropped rather
+      #     than shipped unverified.
+      - bandlabtechnologies
+      - imachines
+      - mixcloud-limited
+      - remotebase
+      - sigmadefense
+      - uncapped
     # Recruitee: https://{token}.recruitee.com/api/offers/
     # The token is the SUBDOMAIN. The path form, recruitee.com/{token}/...,
     # 404s for every tenant — which is how this board was written off as
@@ -718,6 +846,15 @@ sources:
       - wandelbots
       - everphone
       - personio
+      # --- remote-first directories: remoteintech/remote-jobs (884 companies)
+      #     and yanirs/established-remote. Each token below was run through
+      #     this repo's own fetcher against the live board before being
+      #     added; 14 candidates that never answered were dropped rather
+      #     than shipped unverified.
+      - capmo
+      - crate-io
+      - giant-swarm
+      - voiio
     ashby:
       - vanta
       - clickhouse
@@ -926,6 +1063,57 @@ sources:
       - wayflyer
       - whitecircle
       - ygo
+      # --- remote-first directories: remoteintech/remote-jobs (884 companies)
+      #     and yanirs/established-remote. Each token below was run through
+      #     this repo's own fetcher against the live board before being
+      #     added; 14 candidates that never answered were dropped rather
+      #     than shipped unverified.
+      - airgarage
+      - betterup
+      - calibre
+      - capchase
+      - caremessage
+      - checkly
+      - dave
+      - deel
+      - envoy
+      - flip
+      - gitbook
+      - hubstaff
+      - influxdata
+      - instructure
+      - intellistack
+      - joor
+      - kestra
+      - kindred
+      - lifen
+      - lightspeed
+      - litmus
+      - luxor
+      - mapbox
+      - meridianlink
+      - mux
+      - nerdwallet
+      - nuna
+      - openrouter
+      - payscale
+      - percona
+      - prelude
+      - primer
+      - procurify
+      - quora
+      - raft
+      - recharge
+      - scribdinc
+      - searchapi
+      - spruce
+      - stickermule
+      - testgorilla
+      - tribe-xyz
+      - truelogic
+      - virtahealth
+      - webfx
+      - yazio
   # Remote-first boards. All three verified live: Remotive and RemoteOK return
   # JSON, WeWorkRemotely returns RSS. Remotive is the most useful of them — it
   # publishes job_type (contract vs full_time) and the regions the employer
