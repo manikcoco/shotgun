@@ -17,7 +17,7 @@ from rich.text import Text
 from . import answers as answers_mod
 from . import db, pipeline, visa
 from . import profile as profile_mod
-from .config import Preferences
+from .config import REPO_ROOT, Preferences
 from .models import Stage
 
 app = typer.Typer(
@@ -1160,6 +1160,41 @@ def retry(
             console.print(f"[green]{jid} -> queued[/]")
 
     console.print(f"\n{len(targets)} requeued. Run [bold]shotgun queue[/] to review.")
+
+
+@app.command()
+def report() -> None:
+    """Write the standing list of companies and open security roles.
+
+    Two files under reports/: security-roles.json, which the next run diffs
+    against, and security-roles.md, which you read. Roles are keyed on
+    company + title + country, so a posting reposted under a new URL is not
+    announced as new again and `first_seen` survives across runs.
+
+    Intended for a sweep every few weeks — the top of the Markdown is what
+    moved since last time. Free; no model calls.
+    """
+    from . import report as report_mod
+
+    with db.connect() as conn:
+        changes, paths = report_mod.generate(conn)
+
+    counts = changes.counts
+    table = Table(title="report")
+    table.add_column("")
+    table.add_column("Roles", justify="right")
+    for label, key in (("new since last run", "new"), ("changed", "changed"),
+                       ("unchanged", "unchanged"), ("no longer listed", "closed")):
+        table.add_row(label, str(counts[key]))
+    console.print(table)
+    for kind, path in paths.items():
+        console.print(f"  {kind:9} [bold]{path.relative_to(REPO_ROOT)}[/]")
+
+    for role in changes.new[:20]:
+        where = role.get("location") or role.get("country") or "—"
+        console.print(f"  {role['company'][:22]:22} {role['title'][:44]:44} {where[:22]}")
+    if len(changes.new) > 20:
+        console.print(f"  ...and {len(changes.new) - 20} more — see the Markdown")
 
 
 @app.command()

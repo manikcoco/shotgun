@@ -12,7 +12,12 @@ import httpx
 import pytest
 
 from shotgun.ats import ATS, detect
-from shotgun.discover.ats_boards import fetch_personio
+from shotgun.discover.ats_boards import (
+    FETCHERS,
+    fetch_personio,
+    fetch_recruitee,
+    fetch_teamtailor,
+)
 
 FEED = """<?xml version="1.0" encoding="UTF-8"?>
 <workzag-jobs>
@@ -446,3 +451,53 @@ def test_arbeitnow_stops_at_max_pages() -> None:
 
     client = httpx.Client(transport=httpx.MockTransport(handler))
     assert len(fetch_arbeitnow(client, max_pages=3)) == 3
+
+
+# ------------------------------------------------- recruitee and teamtailor
+
+def _client(payload: dict) -> httpx.Client:
+    return httpx.Client(transport=httpx.MockTransport(
+        lambda request: httpx.Response(200, json=payload)))
+
+
+def test_recruitee_prefers_the_stated_location_over_the_office() -> None:
+    """The two disagree more often than not. Time Doctor files
+    "Argentina - Remote" under an office whose city is New York."""
+    jobs = fetch_recruitee("acme", _client({"offers": [{
+        "id": 7, "title": "Security Engineer",
+        "careers_url": "https://acme.recruitee.com/o/security-engineer",
+        "locations": [{"name": "Argentina - Remote", "country_code": "ar",
+                       "city": "New York", "country": "United States"}],
+        "description": "<p>text</p>",
+    }]}))
+    assert jobs[0].location == "Argentina - Remote"
+    assert jobs[0].country == "AR"
+    assert jobs[0].ats == "recruitee"
+
+
+def test_recruitee_falls_back_to_the_country_code() -> None:
+    """When the stated name carries no country the structured code stands in."""
+    jobs = fetch_recruitee("acme", _client({"offers": [{
+        "id": 8, "title": "Security Engineer", "careers_url": "https://x",
+        "locations": [{"name": "Head office", "country_code": "nl"}],
+    }]}))
+    assert jobs[0].country == "NL"
+
+
+def test_teamtailor_json_feed_carries_no_structured_location() -> None:
+    """JSON Feed is a blogging format — there are no job fields at all."""
+    jobs = fetch_teamtailor("acme", _client({"items": [{
+        "id": "x1", "title": "Security Engineer",
+        "url": "https://acme.teamtailor.com/jobs/1",
+        "date_published": "2026-09-18T14:38:46+02:00",
+        "content_html": "<p>Join <i>us</i></p>",
+    }]}))
+    assert jobs[0].title == "Security Engineer"
+    assert jobs[0].country is None
+    assert jobs[0].posted_at == "2026-09-18"
+    assert "Join us" in jobs[0].description
+
+
+def test_both_new_boards_are_dispatchable() -> None:
+    assert "recruitee" in FETCHERS
+    assert "teamtailor" in FETCHERS

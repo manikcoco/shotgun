@@ -439,3 +439,16 @@ def test_places_the_corpus_emits_are_recognised(location, expected) -> None:
 
     assert expected in detect_countries(location)
     assert is_location_neutral(location) is False
+
+
+@pytest.mark.parametrize("location", ["UK", "U.K.", "Remote, UK", "UK - Remote"])
+def test_bare_uk_resolves_like_bare_us(location) -> None:
+    """The leading- and trailing-code rules already catch "UK - Remote" and
+    "London, UK", but a location that is *only* the abbreviation has neither a
+    separator nor a comma to anchor them, so it parsed as no country at all."""
+    assert detect_country(location) == "GB"
+
+
+@pytest.mark.parametrize("location", ["Ukraine", "Kyiv, Ukraine"])
+def test_the_uk_hint_does_not_fire_inside_ukraine(location) -> None:
+    assert detect_country(location) == "UA"

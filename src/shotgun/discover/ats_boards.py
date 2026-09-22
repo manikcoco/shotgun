@@ -10,10 +10,19 @@ endpoints, and every one was verified against a live response before its
 adapter was written. Workday and iCIMS do not; for those, discovery happens
 through JobSpy and the apply URL is handled by a browser filler.
 
-Recruitee is deliberately absent. The subdomains exist but
-`/{token}/api/offers/` answered 404 for every tenant tried, so there is
-nothing here to write an adapter against — a guessed mapping is worse than no
-adapter, because it fails silently and looks like a company that isn't hiring.
+Recruitee and Teamtailor are here too, and the note that once said Recruitee
+had no usable endpoint was wrong in an instructive way. `/{token}/api/offers/`
+does 404 for every tenant — but that is the *path* form, and Recruitee keys on
+the subdomain. Checked live against the same tenant:
+
+    https://recruitee.com/timedoctor/api/offers/    -> 404
+    https://timedoctor.recruitee.com/api/offers/    -> 200, 4 offers
+
+Which shape carries the token differs per board and is the easiest thing here
+to get wrong: Workable and SmartRecruiters put it in the path, Recruitee,
+Teamtailor and Personio in the subdomain. Guess wrong and you capture `apply`
+or `www`, which 404s identically for every company — indistinguishable from a
+company that isn't hiring, which is exactly how Recruitee got written off.
 """
 
 from __future__ import annotations
@@ -456,6 +465,75 @@ def hydrate_descriptions(jobs: list[Job], keep, *, max_workers: int = 8) -> int:
     return filled
 
 
+def fetch_recruitee(token: str, client: httpx.Client) -> list[Job]:
+    """https://{token}.recruitee.com/api/offers/ — subdomain, not path.
+
+    The location is worth care. Recruitee gives both a structured office and
+    a free-text name, and they disagree more often than not: Time Doctor files
+    "Argentina - Remote" under an office whose city is New York and whose
+    country_code is US. The name is what the employer wrote about the role,
+    the office is where the company is registered, so the name wins and the
+    country comes from the code only as a fallback.
+    """
+    resp = client.get(f"https://{token}.recruitee.com/api/offers/")
+    resp.raise_for_status()
+    payload = resp.json()
+    items = payload.get("offers") or []
+    _shape("recruitee", token, payload, items[0] if items else None)
+
+    jobs: list[Job] = []
+    for item in items:
+        places = item.get("locations") or []
+        stated = (places[0].get("name") if places else None) or item.get("location")
+        job = _job(
+            source=f"recruitee:{token}",
+            ats=ATS.RECRUITEE,
+            company=item.get("company_name") or token,
+            title=item.get("title", ""),
+            url=item.get("careers_url") or item.get("url", ""),
+            location=stated,
+            description=_strip_html(item.get("description") or item.get("requirements")),
+            source_id=str(item.get("id") or "") or None,
+        )
+        if job.country is None:
+            code = next((p.get("country_code") for p in places if p.get("country_code")), None)
+            job.country = (code or "").upper() or None
+        job.posted_at = item.get("published_at")
+        jobs.append(job)
+    return jobs
+
+
+def fetch_teamtailor(token: str, client: httpx.Client) -> list[Job]:
+    """https://{token}.teamtailor.com/jobs.json — a JSON Feed.
+
+    JSON Feed is a blogging format, so there are no job fields at all: no
+    location object, no employment type, no salary. Everything beyond title,
+    URL and body has to be parsed out of prose or left empty, which is why
+    this is the thinnest adapter here. It still beats not seeing the company.
+    """
+    resp = client.get(f"https://{token}.teamtailor.com/jobs.json")
+    resp.raise_for_status()
+    payload = resp.json()
+    items = payload.get("items") or []
+    _shape("teamtailor", token, payload, items[0] if items else None)
+
+    jobs: list[Job] = []
+    for item in items:
+        job = _job(
+            source=f"teamtailor:{token}",
+            ats=ATS.TEAMTAILOR,
+            company=token,
+            title=item.get("title", ""),
+            url=item.get("url", ""),
+            location=item.get("summary"),
+            description=_strip_html(item.get("content_html")),
+            source_id=str(item.get("id") or "") or None,
+        )
+        job.posted_at = (item.get("date_published") or "")[:10] or None
+        jobs.append(job)
+    return jobs
+
+
 FETCHERS = {
     "greenhouse": fetch_greenhouse,
     "lever": fetch_lever,
@@ -463,6 +541,8 @@ FETCHERS = {
     "personio": fetch_personio,
     "smartrecruiters": fetch_smartrecruiters,
     "workable": fetch_workable,
+    "recruitee": fetch_recruitee,
+    "teamtailor": fetch_teamtailor,
 }
 
 
