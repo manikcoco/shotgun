@@ -26,6 +26,13 @@ REGIONS: dict[str, set[str]] = {
 # Substrings that identify a country in a location string. Order matters:
 # longer / more specific keys are checked first.
 COUNTRY_HINTS: list[tuple[str, str]] = [
+    # Bare "UK", to match the bare "US" further down. The leading-code and
+    # trailing-code rules already catch "UK - Remote" and "London, UK", but a
+    # location that is *only* the abbreviation has neither a separator nor a
+    # comma to anchor them, so it parsed as no country at all — in a target
+    # region. Safe as a plain hint because these match on \b boundaries, so it
+    # cannot fire inside "Ukraine".
+    ("uk", "GB"), ("u.k.", "GB"),
     ("united kingdom", "GB"), ("great britain", "GB"), ("england", "GB"),
     ("scotland", "GB"), ("wales", "GB"), ("northern ireland", "GB"),
     ("new zealand", "NZ"),

@@ -677,6 +677,28 @@ sources:
     # Workable: https://apply.workable.com/api/v1/widget/accounts/{token}?details=true
     workable:
       - typeform
+      - huggingface
+      - balena
+      - netguru
+      - seeq
+      - recurly
+      - humanmade
+      - io-global
+      - ushahidi
+    # Recruitee: https://{token}.recruitee.com/api/offers/
+    # The token is the SUBDOMAIN. The path form, recruitee.com/{token}/...,
+    # 404s for every tenant — which is how this board was written off as
+    # having no usable endpoint until the two shapes were compared directly.
+    recruitee:
+      - timedoctor
+      - madewithlove
+      - intent
+      - bigcartel
+    # Teamtailor: https://{token}.teamtailor.com/jobs.json — a JSON Feed, so
+    # it carries a title, a URL and a body and nothing else. No location, no
+    # employment type, no salary. Thin, but better than not seeing the board.
+    teamtailor:
+      - thecasumolimited
     # Personio hosts a public XML feed per tenant at
     #   https://{token}.jobs.personio.de/xml   (or .com — both are tried)
     # The token is the subdomain on the careers page.

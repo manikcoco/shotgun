@@ -53,6 +53,7 @@ Only four cost a model call. Everything else is free.
 | `status --filter --why` | How many roles match, how many unscored, why the rest were rejected. |
 | `list --in-region` | Roles you could take without sponsorship. Also `--anywhere`, `--near-miss`. |
 | `show <id> --jd` | One posting: score, priority breakdown, reasoning, history. |
+| `report` | Write `reports/security-roles.{json,md}` — every open role, with what changed since the last run at the top. Free. |
 | `queue` · `ui` | The apply queue; local web dashboard (binds 127.0.0.1, no auth — don't expose it). |
 | `discover` | Fetch and store. `-s ats_boards\|remote_boards\|jobspy` |
 | `rank` | **paid** — scores what survived the free filter. `--rules-only` doesn't. |
@@ -64,6 +65,26 @@ Only four cost a model call. Everything else is free.
 
 `prepare` never submits. `apply.mode: auto` is accepted in config and
 deliberately unimplemented.
+
+## The standing report
+
+```bash
+uv run shotgun report
+```
+
+Writes `reports/security-roles.json` — the record the next run diffs against —
+and `reports/security-roles.md`, which opens with **New since last run**, then
+**Changed**, then **No longer listed**, then every open role by company.
+
+Built for a sweep every few weeks, so the useful property is that it does not
+repeat itself. A role is identified by **company + title + country**, not by
+job id (per-database) and not by URL (changes whenever a board reposts), so a
+role you saw last month does not come back as new because someone reposted it,
+and `first_seen` survives. Only title, company, country, location, URL, remote
+and salary count as a change — a reworded description does not, because boards
+reword constantly and it is not a new job.
+
+Commit the files and `git diff reports/` is a second view of the same thing.
 
 ## How it works
 
@@ -105,7 +126,7 @@ from the profile blocks the resume outright — including an inflated metric, so
 
 | Source | Notes |
 |---|---|
-| Greenhouse, Lever, Ashby, Personio, SmartRecruiters, Workable | Public board APIs. Highest signal: full JDs, direct apply URLs, no anti-bot. You supply company tokens. SmartRecruiters publishes no description on its list endpoint, so those are hydrated per-posting after the title filter. |
+| Greenhouse, Lever, Ashby, Personio, SmartRecruiters, Workable, Recruitee, Teamtailor | Public board APIs. Highest signal: full JDs, direct apply URLs, no anti-bot. You supply company tokens. SmartRecruiters publishes no description on its list endpoint, so those are hydrated per-posting after the title filter. Teamtailor serves a JSON Feed — title, URL and body, no location or salary. Which part of the URL carries the token differs per board: path for Workable and SmartRecruiters, subdomain for Recruitee, Teamtailor and Personio. |
 | Remotive, RemoteOK, WeWorkRemotely, arbeitnow | Public JSON/RSS. arbeitnow is the only Germany/EU-weighted one and needs no token list, which is how it surfaces companies running no public ATS at all. |
 | LinkedIn, Indeed, Google | Via JobSpy. Broad, noisy, descriptions usually missing. |
 
